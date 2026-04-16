@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0c0f;--bg2:#111318;--bg3:#181c23;
+    --border:#222630;--border2:#2e3445;
+    --text:#e2e8f0;--muted:#6b7a99;--dim:#3a4259;
+    --green:#00e676;--green2:#1de9b6;--red:#ff5252;
+    --amber:#ffd740;--blue:#448aff;
+    --font-mono:'IBM Plex Mono',monospace;
+    --font-sans:'IBM Plex Sans',sans-serif;
+  }
+  html,body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh;}
+
+  .shell{max-width:960px;margin:0 auto;padding:1.5rem 1rem 3rem;}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;flex-wrap:wrap;gap:.5rem;}
+  .logo{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--green);text-transform:uppercase;}
+  .logo span{color:var(--muted);font-weight:400;}
+  .clock{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+
+  .controls{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center;}
+  .ctrl-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:.25rem;}
+  select,button{
+    font-family:var(--font-mono);font-size:12px;
+    background:var(--bg2);color:var(--text);
+    border:1px solid var(--border2);border-radius:4px;
+    padding:6px 12px;cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  select:hover,button:hover{border-color:var(--blue);background:var(--bg3);}
+  button.primary{background:var(--green);color:#000;font-weight:600;border-color:var(--green);}
+  button.primary:hover{background:var(--green2);border-color:var(--green2);}
+  button.primary:disabled{background:var(--dim);color:var(--muted);border-color:var(--dim);cursor:not-allowed;}
+
+  .status-bar{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--dim);display:inline-block;flex-shrink:0;}
+  .dot.live{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .dot.loading{background:var(--amber);animation:pulse .8s ease-in-out infinite alternate;}
+  @keyframes pulse{to{opacity:.3;}}
+
+  .table-wrap{border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1.5rem;}
+  table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px;}
+  thead th{background:var(--bg3);color:var(--muted);font-weight:500;text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);letter-spacing:.04em;font-size:11px;text-transform:uppercase;}
+  thead th.r{text-align:right;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--bg3);}
+  tbody tr.selected{background:#1a2235;}
+  td{padding:10px 12px;vertical-align:middle;}
+  td.r{text-align:right;}
+  .rank{color:var(--dim);font-size:10px;width:28px;}
+  .ticker{font-weight:600;color:var(--text);font-size:13px;}
+  .name{color:var(--muted);font-size:11px;margin-top:1px;}
+  .price{font-weight:600;color:var(--text);}
+  .chg{font-weight:500;}
+  .chg.up{color:var(--green);}
+  .chg.down{color:var(--red);}
+  .signal{display:inline-block;font-size:10px;padding:2px 7px;border-radius:3px;letter-spacing:.04em;}
+  .signal.BUY{background:#003d1a;color:var(--green);}
+  .signal.SELL{background:#3d0000;color:var(--red);}
+  .signal.HOLD{background:#2a2200;color:var(--amber);}
+  .bar-wrap{width:80px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;}
+  .bar-fill{height:100%;border-radius:2px;}
+  .bar-fill.up{background:var(--green);}
+  .bar-fill.down{background:var(--red);}
+
+  .detail-panel{border:1px solid var(--border2);border-radius:6px;background:var(--bg2);padding:1.25rem;margin-bottom:1.5rem;display:none;}
+  .detail-panel.open{display:block;animation:fadeIn .2s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .detail-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;}
+  .detail-ticker{font-family:var(--font-mono);font-size:18px;font-weight:600;}
+  .detail-name{font-family:var(--font-sans);font-size:13px;color:var(--muted);}
+  .detail-price{font-family:var(--font-mono);font-size:18px;font-weight:600;}
+  .articles-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;}
+  .article-card{border:1px solid var(--border);border-radius:4px;padding:.75rem 1rem;margin-bottom:.6rem;background:var(--bg3);}
+  .art-source{font-family:var(--font-mono);font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+  .art-title{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:4px;}
+  .art-snippet{font-size:12px;color:var(--muted);line-height:1.55;}
+  .art-url{font-family:var(--font-mono);font-size:10px;color:var(--dim);margin-top:4px;word-break:break-all;}
+  .loading-msg{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding:.5rem 0;}
+  .error-msg{font-family:var(--font-mono);font-size:12px;color:var(--red);padding:.5rem 0;}
+  .empty-state{text-align:center;padding:2.5rem 1rem;font-family:var(--font-mono);font-size:12px;color:var(--dim);}
+  .footer-note{font-family:var(--font-mono);font-size:10px;color:var(--dim);text-align:center;margin-top:1rem;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="logo">SIGNAL<span>/</span>DESK <span>— Market Intelligence</span></div>
+    <div class="clock" id="clock">--:--:-- UTC</div>
+  </header>
+
+  <div class="controls">
+    <span class="ctrl-label">Universe</span>
+    <select id="universe">
+      <option value="sp500_top">S&P 500 Top Movers</option>
+      <option value="tech">Tech Giants</option>
+      <option value="energy">Energy</option>
+      <option value="financials">Financials</option>
+      <option value="ai_plays">AI / Semiconductor</option>
+    </select>
+    <span class="ctrl-label" style="margin-left:.5rem">Rank by</span>
+    <select id="rankby">
+      <option value="momentum">Momentum</option>
+      <option value="volume">Volume surge</option>
+      <option value="analyst">Analyst signal</option>
+    </select>
+    <button class="primary" id="fetchBtn" onclick="fetchStocks()">▶ Fetch Rankings</button>
+  </div>
+
+  <div class="status-bar"><span class="dot" id="dot"></span><span id="status-text">Ready — press Fetch to load live data</span></div>
+
+  <div class="table-wrap" id="tableWrap" style="display:none">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Ticker</th>
+        <th class="r">Price</th><th class="r">Change</th>
+        <th class="r">Momentum</th><th class="r">Signal</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <span class="detail-ticker" id="dTicker"></span>
+      <span class="detail-name" id="dName"></span>
+      <span class="detail-price" id="dPrice"></span>
+    </div>
+    <div class="articles-label">Latest news &amp; sources</div>
+    <div id="articlesBox"><div class="loading-msg">Select a stock from the table above.</div></div>
+  </div>
+
+  <div class="footer-note">Powered by Claude + web search · Click any row for sourced news · Data is AI-retrieved and for informational purposes only</div>
+</div>
+
+<script>
+let stockData = [];
+let selectedIdx = -1;
+
+function tick() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toUTCString().slice(17, 25) + ' UTC';
+}
+setInterval(tick, 1000); tick();
+
+function setStatus(msg, state) {
+  document.getElementById('status-text').textContent = msg;
+  const dot = document.getElementById('dot');
+  dot.className = 'dot' + (state === 'live' ? ' live' : state === 'loading' ? ' loading' : '');
+}
+
+async function callClaude(prompt, useSearch) {
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    messages: [{ role: 'user', content: prompt }]
+  };
+  if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+  return text;
+}
+
+function parseJSON(raw) {
+  const clean = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function fetchStocks() {
+  const universe = document.getElementById('universe').value;
+  const rankby = document.getElementById('rankby').value;
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  setStatus('Fetching live market data…', 'loading');
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('tableWrap').style.display = 'none';
+  stockData = []; selectedIdx = -1;
+
+  const universeLabel = {
+    sp500_top: 'S&P 500 top movers today',
+    tech: 'large-cap US tech stocks (AAPL, MSFT, GOOGL, META, AMZN, NVDA)',
+    energy: 'major US energy stocks (XOM, CVX, COP, SLB, OXY)',
+    financials: 'major US financial stocks (JPM, BAC, GS, MS, WFC)',
+    ai_plays: 'AI and semiconductor stocks (NVDA, AMD, INTC, ARM, SMCI, MRVL)'
+  }[universe];
+
+  const rankLabel = { momentum: 'price momentum (% change today)', volume: 'volume surge vs 30-day avg', analyst: 'analyst buy/sell signal strength' }[rankby];
+
+  const prompt = `You are a financial data assistant. Search the web for current market data and return ONLY a JSON array, no markdown, no explanation.
+
+Get real-time data for: ${universeLabel}
+Rank them by: ${rankLabel}
+
+Return exactly this JSON structure (array of 6 objects):
+[
+  {
+    "rank": 1,
+    "ticker": "NVDA",
+    "name": "NVIDIA Corporation",
+    "price": "123.45",
+    "change": "+3.21",
+    "changePct": "+2.68%",
+    "signal": "BUY",
+    "momentum": 82
+  }
+]
+
+Where:
+- price: current stock price as string with 2 decimals
+- change: dollar change today (+ or -)
+- changePct: percent change today (+ or -)
+- signal: one of BUY, HOLD, SELL based on today's momentum and trend
+- momentum: integer 0-100 (higher = stronger upward momentum)
+
+Return ONLY the JSON array. No preamble, no backticks, no explanation.`;
+
+  try {
+    const raw = await callClaude(prompt, true);
+    stockData = parseJSON(raw);
+    renderTable(stockData);
+    setStatus(`${stockData.length} stocks ranked · ${new Date().toLocaleTimeString()} · Click a row for sourced news`, 'live');
+    document.getElementById('tableWrap').style.display = 'block';
+  } catch(e) {
+    setStatus('Error fetching data. Try again.', '');
+    console.error(e);
+  }
+  btn.disabled = false;
+}
+
+function renderTable(stocks) {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  stocks.forEach((s, i) => {
+    const up = !s.changePct.startsWith('-');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank">${s.rank}</td>
+      <td><div class="ticker">${s.ticker}</div><div class="name">${s.name}</div></td>
+      <td class="r price">$${s.price}</td>
+      <td class="r chg ${up ? 'up' : 'down'}">${s.change}<br><span style="font-size:10px">${s.changePct}</span></td>
+      <td class="r">
+        <div class="bar-wrap"><div class="bar-fill ${up ? 'up' : 'down'}" style="width:${s.momentum}%"></div></div>
+        <span style="font-size:10px;color:var(--muted);margin-left:6px">${s.momentum}</span>
+      </td>
+      <td class="r"><span class="signal ${s.signal}">${s.signal}</span></td>
+    `;
+    tr.onclick = () => selectStock(i, tr);
+    tbody.appendChild(tr);
+  });
+}
+
+async function selectStock(i, tr) {
+  document.querySelectorAll('#tbody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+  selectedIdx = i;
+  const s = stockData[i];
+  document.getElementById('dTicker').textContent = s.ticker;
+  document.getElementById('dName').textContent = s.name;
+  document.getElementById('dPrice').textContent = `$${s.price} ${s.changePct}`;
+  document.getElementById('dPrice').style.color = s.changePct.startsWith('-') ? 'var(--red)' : 'var(--green)';
+  const panel = document.getElementById('detailPanel');
+  panel.classList.add('open');
+  const box = document.getElementById('articlesBox');
+  box.innerHTML = '<div class="loading-msg">⟳ Searching for latest news and analyst coverage…</div>';
+
+  const prompt = `Search the web for the latest news and analyst coverage about ${s.ticker} (${s.name}) stock today, ${new Date().toDateString()}.
+
+Return ONLY a JSON array of 4 articles, no markdown, no explanation:
+[
+  {
+    "source": "Reuters",
+    "title": "Article headline here",
+    "snippet": "2-3 sentence summary of the article content",
+    "url": "https://example.com/article-url"
+  }
+]
+
+Use real articles you find via web search. Include the actual URL. Prioritize financial news sources (Reuters, Bloomberg, WSJ, CNBC, MarketWatch, Barron's, Financial Times, Seeking Alpha).
+Return ONLY the JSON array.`;
+
+  try {
+    const raw = await callClaude(prompt, true);
+    const articles = parseJSON(raw);
+    box.innerHTML = articles.map(a => `
+      <div class="article-card">
+        <div class="art-source">${a.source}</div>
+        <div class="art-title">${a.title}</div>
+        <div class="art-snippet">${a.snippet}</div>
+        <div class="art-url"><a href="${a.url}" style="color:var(--blue);text-decoration:none" target="_blank">${a.url}</a></div>
+      </div>
+    `).join('');
+  } catch(e) {
+    box.innerHTML = '<div class="error-msg">Could not retrieve articles. Try selecting the stock again.</div>';
+  }
+}
+</script>
+</body>
+</html>
